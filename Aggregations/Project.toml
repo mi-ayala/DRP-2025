@@ -1,0 +1,18 @@
+name = "Aggregations"
+uuid = "c1cd6557-49d7-4a85-8f30-3fb750939ebf"
+authors = ["Miguel Ayala <miguel.guadarramaayala@mail.mcgill.ca>"]
+version = "0.1.0"
+
+[deps]
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+SteadyStateDiffEq = "9672c7b4-1e72-59bd-8a11-6ac3964bc41f"
+
+[compat]
+DifferentialEquations = "7.15.0"
+Distances = "0.10.12"
+NonlinearSolve = "4.3.0"
+OrdinaryDiffEq = "6.90.1"
+SteadyStateDiffEq = "2.4.1"
