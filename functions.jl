@@ -13,7 +13,7 @@ function e(u, p)
     pairwise!(r, Euclidean(), transpose(reshape(u, :, 3)), dims=2)
 
 
-    @inbounds for i in 1:(N-1)
+    for i in 1:(N-1)
 
         for j in (i+1):N
 
@@ -27,33 +27,33 @@ function e(u, p)
 end
 
 
-function g(u, α, λ, N)
+# function g(u, α, λ, N)
 
-    u = transpose(reshape(u, :, 3))
-    r = zeros(eltype(α), N, N)
-    du = zeros(eltype(α), 3, N)
+#     u = transpose(reshape(u, :, 3))
+#     r = zeros(eltype(α), N, N)
+#     du = zeros(eltype(α), 3, N)
 
-    pairwise!(r, Euclidean(), u, dims=2)
+#     pairwise!(r, Euclidean(), u, dims=2)
 
-    ### The main loop
-    @inbounds for i in 1:(N-1)
+#     ### The main loop
+#     @inbounds for i in 1:(N-1)
 
-        @inbounds for j in (i+1):N
+#         @inbounds for j in (i+1):N
 
-            Interaction = (-r[i, j]^(α - 2) + r[i, j]^(-λ - 2)) * (view(u, :, i) - view(u, :, j))
+#             Interaction = (-r[i, j]^(α - 2) + r[i, j]^(-λ - 2)) * (view(u, :, i) - view(u, :, j))
 
-            du[:, i] += Interaction
+#             du[:, i] += Interaction
 
-            du[:, j] -= Interaction
+#             du[:, j] -= Interaction
 
-        end
+#         end
 
 
-    end
+#     end
 
-    reshape((1 / N) .* transpose(du), :, 1)
+#     reshape((1 / N) .* transpose(du), :, 1)
 
-end
+# end
 
 function g(u, p)
 

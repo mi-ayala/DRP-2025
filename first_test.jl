@@ -1,29 +1,36 @@
 using Aggregations
-using DifferentialEquations
-using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
+
+
+# using DifferentialEquations
+# using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
+# using LinearAlgebra
+
+
+
 using Distances
-using LinearAlgebra
-
-
 include("functions.jl")
 
-N = 15
+
+
 u = vec(2 * rand(3, N) .- 1)
-# ff = ODEFunction(g!; jac=h_fast!)
 
-
-
+N = 3
 λ = 2^(-6)
 α = 2.0
-
 p = (α, λ, N)
-
 
 e(u, p)
 
 
 
 
+# # ff = ODEFunction(g!; jac=h_fast!)
+
+
+
+
+
+# e(u, p)
 
 
 
@@ -60,3 +67,15 @@ e(u, p)
 # end
 
 # u = get_state_2(u, N, ff)
+
+
+# #### Integration
+# for i in 1:2
+#     @time u = solve(ODEProblem(ff, u, (0.0, 30.0),p), QNDF(), save_everystep = false)
+#     println("alpha: ", α, " lambda: ", λ, " norm: ", norm(g(u[end],p),Inf))
+#     u = u[end]
+#     if norm(g(u,p),Inf) < 1e-4
+#         println(i)
+#       break
+#     end
+#     end
