@@ -6,7 +6,7 @@ using Aggregations
 # using LinearAlgebra
 
 
-
+print("hello world")
 using Distances
 include("functions.jl")
 
