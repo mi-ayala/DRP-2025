@@ -7,6 +7,7 @@ using Aggregations
 
 
 print("hello world")
+print("hello world")
 using Distances
 include("functions.jl")
 
