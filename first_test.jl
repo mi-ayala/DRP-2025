@@ -12,10 +12,10 @@ using Distances
 include("functions.jl")
 
 
-
+N = 3
 u = vec(2 * rand(3, N) .- 1)
 
-N = 3
+
 λ = 2^(-6)
 α = 2.0
 p = (α, λ, N)
