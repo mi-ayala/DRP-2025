@@ -6,35 +6,28 @@ using Aggregations
 # using LinearAlgebra
 
 
-print("hello world")
-print("hello world")
+# print("hello world")
+# print("hello world")
 using Distances
+
 include("functions.jl")
 
 
-N = 3
+
 u = vec(2 * rand(3, N) .- 1)
 
-
+N = 3
 λ = 2^(-6)
 α = 2.0
 p = (α, λ, N)
 
+u = vec(2 * rand(3, N) .- 1)
 e(u, p)
 
-
-
+### Minus gradient
+g(u, p)
 
 # # ff = ODEFunction(g!; jac=h_fast!)
-
-
-
-
-
-# e(u, p)
-
-
-
 
 
 # function get_state_2(u, N, ff)
