@@ -1,5 +1,6 @@
 using ForwardDiff
 using Distances
+using LinearAlgebra
 
 include("functions.jl")
 
@@ -11,10 +12,12 @@ p = (α, λ, N)
 
 u = vec(2 * rand(3, N) .- 1)
 e(u, p)
-g(u, p)
-h(u, p)
+@time g(u, p)
+@time h(u, p)
 
 
-ForwardDiff.gradient(u -> e(u, p), u)
-ForwardDiff.hessian(u -> e(u, p), u) 
+@time ForwardDiff.gradient(u -> e(u, p), u)
+@time ForwardDiff.hessian(u -> e(u, p), u) 
 
+
+norm(ForwardDiff.hessian(u -> e(u, p), u) +  h(u, p), Inf)
