@@ -3,6 +3,8 @@ using Distances
 using DifferentialEquations
 using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
 using LinearAlgebra
+using Plots
+
 
 include("functions.jl")
 
@@ -47,7 +49,6 @@ norm(g(u,p), Inf)
 
 
 ### Plots
-using Plots
 u = reshape(u,  N,3)
 scatter(u[:,1], u[:,2], u[:,3], m=(3, 0.8, :blues, stroke(0)))
 
