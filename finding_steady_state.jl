@@ -4,10 +4,7 @@ using DifferentialEquations
 using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
 using LinearAlgebra
 using Plots
-<<<<<<< HEAD
-=======
 
->>>>>>> fb6e392c1e971328317c189617dbb725d59884d6
 
 include("functions.jl")
 
@@ -51,7 +48,7 @@ p = (α, λ, N, r, f, a, XX, YY, ZZ, YX, ZX, ZY, Xa, Ya)
 print(norm(g(u,p), Inf))
 
 ### Plots
-<<<<<<< HEAD
+
 #u = reshape(u,  N,3)
 #scatter(u[:,1], u[:,2], u[:,3], m=(3, 0.8, :blues, stroke(0)))
 
@@ -85,9 +82,4 @@ end
 
 
 
-
-=======
-u = reshape(u,  N,3)
-scatter(u[:,1], u[:,2], u[:,3], m=(3, 0.8, :blues, stroke(0)))
->>>>>>> fb6e392c1e971328317c189617dbb725d59884d6
 
