@@ -4,8 +4,9 @@ using DifferentialEquations
 using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
 using LinearAlgebra
 using Plots
-using PlotlyJS
+#using PlotlyJS
 using Statistics
+plotly()
 
 
 include("functions.jl")
@@ -73,6 +74,17 @@ function compute_minimum_distance(point1, vec_point)
     end
     return min_distance
 end
+
+function compute_all_distance(point1, vec_point)
+    list = zeros(50)
+    i = 1
+    for point2 in eachrow(vec_point)
+        list[i] = norm(point1 -point2)
+        i = i +1
+    end
+    return list
+    
+end
     
         
 
@@ -95,22 +107,28 @@ function simulation(α_start, α_finish, step)
     
     #plot solutions
         u = reshape(u,N,3)
-        #print(u[1])
+        #distances = pairwise(Euclidean(), transpose(u), dims = 2)
+        
         center_of_mass = [mean(u[:,1]), mean(u[:,2]), mean(u[:,3])]
+        distances = compute_all_distance(center_of_mass,u)
         min_dist = compute_minimum_distance(center_of_mass,u)
+        #print(min_dist)
+
     # Create the 3D scatter plot
-        plot = scatter(u[:,1],u[:,2],u[:,3], 
-        title = "α = $α, λ=$λ",
-        label = "steady states")  # Title with your parameter values
-        plot = scatter!(plot, [center_of_mass[1]], [center_of_mass[2]], [center_of_mass[3]], 
-                        label = "center of mass")
+        plot = histogram(distances,
+        #plot = scatter(u[:,1],u[:,2],u[:,3], 
+        bins = range(0,0.75,20),
+        title = "α = $α, λ=$λ",)
+        #label = "steady states")  # Title with your parameter values
+        #plot = scatter!(plot, [center_of_mass[1]], [center_of_mass[2]], [center_of_mass[3]], 
+         #               label = "center of mass")
         #plot = annotate!(3, 4, Plots.text("hello", :red, :right, 10))
         display(plot)
     end
 end
 
 
-simulation(30,30,5)
+simulation(10,100,5)
 #print(compute_minimum_distance([1,1,1], [[1,2,3],[3,4,5],[6,7,8]]))
 
 
