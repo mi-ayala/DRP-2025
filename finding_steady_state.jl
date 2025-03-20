@@ -12,7 +12,7 @@ using Statistics
 include("functions.jl")
 
 ### Parameters 
-N = 50
+N = 6
 
 ### Kernel Parameters
 λ = 0.01
@@ -87,14 +87,29 @@ function compute_maximum_distance(point1, vec_point)
 end
 
 function compute_all_distance(point1, vec_point)
-    list = zeros(50)
+    list = zeros(length(vec_point[:,1]))
     i = 1
     for point2 in eachrow(vec_point)
-        list[i] = norm(point1 -point2)
+        list[i] = norm(point1 - point2)
         i = i +1
     end
     return list
     
+end
+
+#find the 3 closest points for every steady state
+function find_k_closest_point(points,k)
+    matrix = zeros(Int,length(points[:,1]),k)
+    
+    for i in range(1,length(points[:,1]))
+
+        distances = sortperm(compute_all_distance(points[i,:], points))
+        #matrix[i,1] = i 
+        for j in range(1,k)
+            matrix[i,j] = distances[j + 1]
+        end
+    end
+    return matrix
 end
     
         
@@ -104,6 +119,7 @@ end
 function simulation(α_start, α_finish, step)
     num_steps = div(α_finish - α_start, step) + 1  # Add 1 to include the last step
     min_max = zeros(Float64, num_steps, 2) 
+    diff_min_max = zeros(Float64,num_steps)
     @time u = solve(SteadyStateProblem(ff_hessian, u0[:], p), DynamicSS(TRBDF2()))
     k = 1
     for α in α_start : step : α_finish
@@ -129,6 +145,7 @@ function simulation(α_start, α_finish, step)
         max_dist = compute_maximum_distance(center_of_mass,u)
         min_max[k,1] = min_dist
         min_max[k,2] = max_dist
+        diff_min_max[k] = max_dist - min_dist
         k = k + 1
         #print(min_dist)
 
@@ -167,7 +184,7 @@ function simulation(α_start, α_finish, step)
                 z=u[:,3],
                 mode="markers",
                 marker=attr(
-                    size=3,
+                    size=6,
                     color="blue", 
                     opacity=0.3
                 ),
@@ -187,7 +204,10 @@ function simulation(α_start, α_finish, step)
         ))
             
         
-        display(p)
+        #display(p)
+        if (α == α_finish)
+            #display(p)
+        end
         
     end
 
@@ -195,15 +215,24 @@ function simulation(α_start, α_finish, step)
     y_min = min_max[:,1]
     y_max = min_max[:,2]
 
+
     trace1 = scatter(x=x_values, y= y_min,
                     mode="lines+markers",
                     name="line_min")
     trace2 = scatter(x=x_values, y=y_max,
                     mode="lines+markers",
                     name="line_max")
+
+    trace3 = scatter(x=x_values, y = diff_min_max,
+                    mode="lines+markers",
+                    name="Difference max-min")
     
-    #line_plot = plot([trace1,trace2])
+    line_plot = plot([trace1,trace2])
+    #line_plot = plot(trace3)
     #display(line_plot)
+
+
+    print(find_k_closest_point(u,3))
 
 
 
@@ -211,7 +240,7 @@ function simulation(α_start, α_finish, step)
 end
 
 
-simulation(20,20,5)
+simulation(10,10,5)
 #print(compute_minimum_distance([1,1,1], [[1,2,3],[3,4,5],[6,7,8]]))
 
 
