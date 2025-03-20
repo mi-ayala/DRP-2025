@@ -1,6 +1,5 @@
 using GLMakie
 
-
 function plot_steady_state(x, connectivity)
 
     if size(x, 2) == 1
@@ -22,7 +21,7 @@ function plot_steady_state(x, connectivity)
             "#D0DFE6FF", "#F79D1EFF", "#748AA6FF"]
 
         for j = 1:NumParticles
-            for k = 1:3
+            for k = 1:4
                 linesegments!(ax, [x[j, 1], x[connectivity[j, k], 1]], [x[j, 2], x[connectivity[j, k], 2]], [x[j, 3], x[connectivity[j, k], 3]], color=colors[1], linewidth=3)
             end
         end

@@ -3,16 +3,15 @@ using Distances
 using DifferentialEquations
 using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
 using LinearAlgebra
-#using Plots
 using PlotlyJS
 using Statistics
-#plotly()
+#
 
 
 include("functions.jl")
 
 ### Parameters 
-N = 6
+N = 20
 
 ### Kernel Parameters
 λ = 0.01
@@ -231,8 +230,9 @@ function simulation(α_start, α_finish, step)
     #line_plot = plot(trace3)
     #display(line_plot)
 
-
-    print(find_k_closest_point(u,3))
+    matrix = find_k_closest_point(u,4)
+    print(matrix)
+    plot_steady_state(u, matrix)
 
 
 
