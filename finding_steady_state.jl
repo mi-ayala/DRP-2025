@@ -11,7 +11,7 @@ using Statistics
 include("functions.jl")
 
 ### Parameters 
-N = 20
+N = 50
 
 ### Kernel Parameters
 λ = 0.01
@@ -110,57 +110,27 @@ function find_k_closest_point(points,k)
     end
     return matrix
 end
-    
-        
 
+function generate_randoms()
+    list = []
+    for i in range(1,20)
+        u0 = u0 = vec(2 * rand(3, N) .- 1)
+        append!(list,u0)
+        #println(u0)
+    end
+end
 
+function solver(α,λ,u)
+    p = (α, λ, N, r, f, a, XX, YY, ZZ, YX, ZX, ZY, Xa, Ya)
+    u = solve(SteadyStateProblem(ff_hessian, u[:], p), DynamicSS(TRBDF2()))
+    u = reshape(u,N,3)
+    return u
+end
 
-function simulation(α_start, α_finish, step)
-    num_steps = div(α_finish - α_start, step) + 1  # Add 1 to include the last step
-    min_max = zeros(Float64, num_steps, 2) 
-    diff_min_max = zeros(Float64,num_steps)
-    @time u = solve(SteadyStateProblem(ff_hessian, u0[:], p), DynamicSS(TRBDF2()))
-    k = 1
-    for α in α_start : step : α_finish
-        println("Solving for α = $α, λ = $λ")
-    
-    # Update parameters
-        p = (α, λ, N, r, f, a, XX, YY, ZZ, YX, ZX, ZY, Xa, Ya)
-    
-    # Solve the system
-        @time u = solve(SteadyStateProblem(ff_hessian, u[:], p), DynamicSS(TRBDF2()))
+function plot_steadystates(u,α,λ)
+    center_of_mass = [mean(u[:,1]), mean(u[:,2]), mean(u[:,3])]
 
-    # Compute how close we are to the steady state
-        println("Norm: ", norm(g(u, p), Inf))
-    
-    #plot solutions
-        u = reshape(u,N,3)
-        #println(round.(u,digits = 2))
-        #distances = pairwise(Euclidean(), transpose(u), dims = 2)
-        
-        center_of_mass = [mean(u[:,1]), mean(u[:,2]), mean(u[:,3])]
-        distances = compute_all_distance(center_of_mass,u)
-        min_dist = compute_minimum_distance(center_of_mass,u)
-        max_dist = compute_maximum_distance(center_of_mass,u)
-        min_max[k,1] = min_dist
-        min_max[k,2] = max_dist
-        diff_min_max[k] = max_dist - min_dist
-        k = k + 1
-        #print(min_dist)
-
-    # Create the 3D scatter plot
-        #plot = histogram(distances,
-        #plot = scatter(u[:,1],u[:,2],u[:,3], 
-        #bins = range(0,0.75,20),
-        #title = "α = $α, λ=$λ",)
-        #label = "steady states")  # Title with your parameter values
-        #plot = scatter!(plot, [center_of_mass[1]], [center_of_mass[2]], [center_of_mass[3]], 
-         #               label = "center of mass")
-        #plot = annotate!(3, 4, Plots.text("hello", :red, :right, 10))
-        #display(plot)
-        t = range(0, stop=2, length = 100)
-
-        p = plot([
+    p = plot([
     # First trace: Center of mass
             scatter(
                 x=[center_of_mass[1]], 
@@ -190,6 +160,9 @@ function simulation(α_start, α_finish, step)
                 name="Steady States",
                 type = "scatter3d"
             )
+
+            #lines between points
+            
         ], 
         Layout(
             title=attr(
@@ -203,17 +176,38 @@ function simulation(α_start, α_finish, step)
         ))
             
         
-        #display(p)
-        if (α == α_finish)
-            #display(p)
-        end
-        
+       display(p)
+end
+
+function sorted_eigenvalues(h,u,p)
+    return sort((eigen(h(u,p)).values))
+end
+
+
+function add_distance(arr,u,type)
+    center_of_mass = [mean(u[:,1]), mean(u[:,2]), mean(u[:,3])]
+    if type == "max"
+        max_dist = compute_maximum_distance(center_of_mass,u)
+        push!(arr,max_dist)
+    
+    elseif type == "min"
+        min_dist = compute_minimum_distance(center_of_mass,u)
+        push!(arr,min_dist)
+    
+    elseif type == "diff"
+        max_dist = compute_maximum_distance(center_of_mass,u)
+        min_dist = compute_minimum_distance(center_of_mass,u)
+        push!(arr,max_dist - min_dist)
     end
 
-    x_values = range(α_start, stop = α_finish, step = step)
-    y_min = min_max[:,1]
-    y_max = min_max[:,2]
+    return arr
 
+end
+
+function plot_distances(α_start, α_finish, step, λ, max_arr, min_arr)
+    x_values = range(α_start, stop = α_finish, step = step)
+    y_min = min_arr
+    y_max = max_arr
 
     trace1 = scatter(x=x_values, y= y_min,
                     mode="lines+markers",
@@ -221,26 +215,50 @@ function simulation(α_start, α_finish, step)
     trace2 = scatter(x=x_values, y=y_max,
                     mode="lines+markers",
                     name="line_max")
-
-    trace3 = scatter(x=x_values, y = diff_min_max,
-                    mode="lines+markers",
-                    name="Difference max-min")
     
     line_plot = plot([trace1,trace2])
-    #line_plot = plot(trace3)
-    #display(line_plot)
+    display(line_plot)
+end
 
-    matrix = find_k_closest_point(u,4)
-    print(matrix)
-    plot_steady_state(u, matrix)
-
-
-
+function simulations(α_start, α_finish, step,u0)
     
+    num_steps = Int(div(α_finish - α_start, step) + 2 ) # Add 1 to include the last step
+    min_arr = []
+    max_arr = []
+
+    #main loop for running simulations
+    for α in α_start : step : α_finish
+        u = solver(α,λ,u0[:])
+        min_arr = add_distance(min_arr,u,"min")
+        max_arr = add_distance(max_arr,u,"max")
+        #plot_steadystates(u,α,λ)
+        
+        
+        u0 = u
+    end
+    println(min_arr)
+    println(max_arr)
+    plot_distances(α_start, α_finish, step, λ, max_arr, min_arr)
 end
 
 
-simulation(10,10,5)
-#print(compute_minimum_distance([1,1,1], [[1,2,3],[3,4,5],[6,7,8]]))
+
+
+
+
+
+
+    
+        
+
+
+
+
+
+
+u0 = vec(2 * rand(3, N) .- 1)
+simulations(25,30,5,u0)
+#u = solver(30,0.1,u0)
+#plot_steadystates(u)
 
 
