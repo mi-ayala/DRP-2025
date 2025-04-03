@@ -5,17 +5,18 @@ using NonlinearSolve, SteadyStateDiffEq, OrdinaryDiffEq
 using LinearAlgebra
 using PlotlyJS
 using Statistics
+using JLD2
 #
 
 
 include("functions.jl")
 
 ### Parameters 
-N = 50
+N = 60
 
 ### Kernel Parameters
 λ = 0.01
-α = 25
+α = 2
 
 
 
@@ -111,13 +112,14 @@ function find_k_closest_point(points,k)
     return matrix
 end
 
-function generate_randoms()
-    list = []
-    for i in range(1,20)
-        u0 = u0 = vec(2 * rand(3, N) .- 1)
-        append!(list,u0)
+function generate_randoms(N,k)
+    list = zeros(3,N,k)
+    for i in range(1,k)
+        u0 = vec(2 * rand(3, N) .- 1)
+        list[:,:,i] = u0
         #println(u0)
     end
+    return list
 end
 
 function solver(α,λ,u)
@@ -198,26 +200,46 @@ function add_distance(arr,u,type)
         max_dist = compute_maximum_distance(center_of_mass,u)
         min_dist = compute_minimum_distance(center_of_mass,u)
         push!(arr,max_dist - min_dist)
+
+    elseif type == "mean"
+        Mean = mean(compute_all_distance(center_of_mass,u))
+        push!(arr,Mean)
+    elseif type == "std"
+        Std = std(compute_all_distance(center_of_mass,u))
+        push!(arr,Std)
+
     end
 
     return arr
 
 end
 
-function plot_distances(α_start, α_finish, step, λ, max_arr, min_arr)
+function trace_measurement(α_start, α_finish, step, arr,name)
     x_values = range(α_start, stop = α_finish, step = step)
-    y_min = min_arr
-    y_max = max_arr
+    y_values = arr
 
-    trace1 = scatter(x=x_values, y= y_min,
+    trace = scatter(x=x_values, y= y_values,
                     mode="lines+markers",
-                    name="line_min")
-    trace2 = scatter(x=x_values, y=y_max,
-                    mode="lines+markers",
-                    name="line_max")
-    
-    line_plot = plot([trace1,trace2])
-    display(line_plot)
+                    name="line_$name")
+    return trace
+end
+
+function compute_energy(k)
+    initial_conditions = generate_randoms(N,k)
+    min_u = vec(2 * rand(3, N) .- 1)
+    min_energy = 10000000
+    for i in range(1,k)
+        u = solver(2,0.01,initial_conditions[:,:,i])
+        energy = e(u,p)
+        if energy < min_energy
+            min_energy = energy
+            min_u = u
+        end
+        #print("energy: $energy, norm : ")
+        #println((norm(g(u,p), Inf)))
+    end
+    return min_u
+
 end
 
 function simulations(α_start, α_finish, step,u0)
@@ -225,20 +247,30 @@ function simulations(α_start, α_finish, step,u0)
     num_steps = Int(div(α_finish - α_start, step) + 2 ) # Add 1 to include the last step
     min_arr = []
     max_arr = []
+    mean_arr = []
+    std_arr = []
 
     #main loop for running simulations
     for α in α_start : step : α_finish
         u = solver(α,λ,u0[:])
         min_arr = add_distance(min_arr,u,"min")
         max_arr = add_distance(max_arr,u,"max")
-        #plot_steadystates(u,α,λ)
-        
-        
+        mean_arr = add_distance(mean_arr,u,"mean")
+        std_arr = add_distance(std_arr,u,"std")
         u0 = u
     end
-    println(min_arr)
-    println(max_arr)
-    plot_distances(α_start, α_finish, step, λ, max_arr, min_arr)
+
+    trace_max = trace_measurement(α_start, α_finish,step,max_arr,"max")
+    trace_min = trace_measurement(α_start, α_finish,step,min_arr,"min")
+    trace_mean = trace_measurement(α_start, α_finish,step,mean_arr,"mean")
+    trace_std = trace_measurement(α_start, α_finish,step,std_arr,"std")
+    p = plot([trace_max,trace_min,trace_mean,trace_std])
+    display(p)
+    
+    
+    
+    
+    
 end
 
 
@@ -254,10 +286,14 @@ end
 
 
 
-
-
-u0 = vec(2 * rand(3, N) .- 1)
-simulations(25,30,5,u0)
+#min_initial_condition = compute_energy(2)
+#save("minimum_initial_condition.jld2", "minimum_initial_condition", min_initial_condition)
+data = load("minimum_initial_condition.jld2")
+min_initial_condition = data["minimum_initial_condition"]
+#println("finished")
+#println(compute_energy())
+#u0 = vec(2 * rand(3, N) .- 1)
+simulations(25,100,5,min_initial_condition)
 #u = solver(30,0.1,u0)
 #plot_steadystates(u)
 
