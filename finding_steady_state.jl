@@ -68,7 +68,7 @@ function compute_minimum_distance(point1, vec_point)
     min_distance = 10000
     for point2 in eachrow(vec_point)
         current_distance = norm(point1 - point2)
-        if current_distance < min_distance
+        if current_distance < min_distance && point1 != point2
             min_distance = current_distance
         end
     end
@@ -79,7 +79,7 @@ function compute_maximum_distance(point1, vec_point)
     max_distance = -1
     for point2 in eachrow(vec_point)
         current_distance = norm(point1 - point2)
-        if current_distance > max_distance
+        if current_distance > max_distance 
             max_distance = current_distance
         end
     end
@@ -215,14 +215,54 @@ function add_distance(arr,u,type)
 end
 
 function trace_measurement(α_start, α_finish, step, arr,name)
+    
+
     x_values = range(α_start, stop = α_finish, step = step)
     y_values = arr
 
     trace = scatter(x=x_values, y= y_values,
                     mode="lines+markers",
-                    name="line_$name")
+                    name="$name distance")
     return trace
 end
+
+function compute_all_minimum_relative_distance(u)
+    list = []
+    for point in eachrow(u)
+        push!(list,compute_minimum_distance(point,u))
+    end
+    return list
+
+
+end
+
+function trace_minimum_relative_distance(α,arr)
+    hist = histogram(x=arr,marker = attr(
+                                    color = "skyblue",  # fill color
+                                    line = attr(color = "black", width = 1.5)  # border color + thickness
+                                    ),)
+    return hist
+end
+
+function neighbors(point, u, r)
+    count = 0
+    for p in eachrow(u)
+        d = norm(point - p)
+        if 0 < d < r   # Exclude the point itself
+            count += 1
+        end
+    end
+    return count
+end
+
+function compute_num_neighbors(u,r)
+    list = []
+    for point in eachrow(u)
+        push!(list,neighbors(point,u,r))
+    end
+    return list
+end
+
 
 function compute_energy(k)
     initial_conditions = generate_randoms(N,k)
@@ -235,8 +275,8 @@ function compute_energy(k)
             min_energy = energy
             min_u = u
         end
-        #print("energy: $energy, norm : ")
-        #println((norm(g(u,p), Inf)))
+        print("energy: $energy, norm : ")
+        println((norm(g(u,p), Inf)))
     end
     return min_u
 
@@ -258,14 +298,33 @@ function simulations(α_start, α_finish, step,u0)
         mean_arr = add_distance(mean_arr,u,"mean")
         std_arr = add_distance(std_arr,u,"std")
         u0 = u
+        trace_min_rel = trace_minimum_relative_distance(α,compute_all_minimum_relative_distance(u0))
+        layout = Layout(
+            title = "Distribution of minimum relative distances for all steady states at α = $α",
+            xaxis_title = "Count",
+            yaxis_title = "Minimum relative distance"
+        )
+        
+        display(plot(trace_min_rel,layout))
     end
+
+    
+    
 
     trace_max = trace_measurement(α_start, α_finish,step,max_arr,"max")
     trace_min = trace_measurement(α_start, α_finish,step,min_arr,"min")
     trace_mean = trace_measurement(α_start, α_finish,step,mean_arr,"mean")
-    trace_std = trace_measurement(α_start, α_finish,step,std_arr,"std")
-    p = plot([trace_max,trace_min,trace_mean,trace_std])
+    #trace_std = trace_measurement(α_start, α_finish,step,std_arr,"std")
+    layout = Layout(
+            title = "Measurements of steady states distances over the variation of α",
+            xaxis_title = "Value of α",
+            yaxis_title = "Distance",
+            showlegend = true
+            )
+    p = plot([trace_max,trace_min,trace_mean],layout)
     display(p)
+
+    
     
     
     
@@ -286,14 +345,20 @@ end
 
 
 
-#min_initial_condition = compute_energy(2)
+#min_initial_condition = compute_energy(500)
 #save("minimum_initial_condition.jld2", "minimum_initial_condition", min_initial_condition)
 data = load("minimum_initial_condition.jld2")
 min_initial_condition = data["minimum_initial_condition"]
 #println("finished")
+#println(min_initial_condition)
 #println(compute_energy())
 #u0 = vec(2 * rand(3, N) .- 1)
-simulations(25,100,5,min_initial_condition)
+#point = u0[1,:]
+#neighbors(point,u0,0.025)
+#arr = compute_all_minimum_relative_distance(u0)
+#plot(trace_measurement(1,2,2,arr,"relative_min"))
+
+simulations(25,30,5,min_initial_condition)
 #u = solver(30,0.1,u0)
 #plot_steadystates(u)
 
