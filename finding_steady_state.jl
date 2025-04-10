@@ -160,7 +160,8 @@ function plot_steadystates(u,α,λ)
                     opacity=0.3
                 ),
                 name="Steady States",
-                type = "scatter3d"
+                type = "scatter3d",
+                
             )
 
             #lines between points
@@ -168,13 +169,30 @@ function plot_steadystates(u,α,λ)
         ], 
         Layout(
             title=attr(
-             text="α = $α, λ = $λ",   
-             x=0.90,                    # Position title to the far right
-             y=0.95,                    # Position title near the top
-             xanchor="right",           # Right align the title
-             yanchor="top"              # Top align the title
+             text=" Position of all steady states when α = $α, λ = $λ",   
+             x=0.47,                    # Position title to the far right
+             y=0.92,                    # Position title near the top
+             #xanchor="middle",           # Right align the title
+             #yanchor="top"              # Top align the title
             ),
-            margin=attr(l=0, r=0, b=50, t=0)  # Adjust margins around the plot
+            legend=attr(
+                x=0.95,           # 0 = left, 1 = right
+                y=0.5,           # 0 = bottom, 1 = top
+            
+            ),
+            font=attr(size = 18),
+           # bgcolor="rgba(255,255,255,0.9)",  # Light background with some opacity
+            #bordercolor="black",
+            #borderwidth=2,
+
+            margin=attr(l=0, r=0, b=50, t=0),
+            scene = attr(
+                xaxis = attr(showbackground=false, showgrid=false, zeroline=false, showticklabels=false, title=""),
+                yaxis = attr(showbackground=false, showgrid=false, zeroline=false, showticklabels=false,title=""),
+                zaxis = attr(showbackground=false, showgrid=false, zeroline=false, showticklabels=false,title=""),
+                bgcolor = "rgba(0,0,0,0)"  # Transparent background
+                ),
+                showlegend=true
         ))
             
         
@@ -304,8 +322,9 @@ function simulations(α_start, α_finish, step,u0)
             xaxis_title = "Count",
             yaxis_title = "Minimum relative distance"
         )
+        plot_steadystates(u0,α,λ)
         
-        display(plot(trace_min_rel,layout))
+        #display(plot(trace_min_rel,layout))
     end
 
     
