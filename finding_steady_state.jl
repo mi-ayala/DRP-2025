@@ -12,7 +12,7 @@ using JLD2
 include("functions.jl")
 
 ### Parameters 
-N = 60
+N = 80
 
 ### Kernel Parameters
 λ = 0.01
@@ -126,6 +126,7 @@ function solver(α,λ,u)
     p = (α, λ, N, r, f, a, XX, YY, ZZ, YX, ZX, ZY, Xa, Ya)
     u = solve(SteadyStateProblem(ff_hessian, u[:], p), DynamicSS(TRBDF2()))
     u = reshape(u,N,3)
+    println("norm when α = $α: $(norm(g(u,p), Inf))")
     return u
 end
 
@@ -157,7 +158,7 @@ function plot_steadystates(u,α,λ)
                 marker=attr(
                     size=6,
                     color="blue", 
-                    opacity=0.3
+                    opacity=0.6
                 ),
                 name="Steady States",
                 type = "scatter3d",
@@ -187,9 +188,9 @@ function plot_steadystates(u,α,λ)
 
             margin=attr(l=0, r=0, b=50, t=0),
             scene = attr(
-                xaxis = attr(showbackground=false, showgrid=false, zeroline=false, showticklabels=false, title=""),
-                yaxis = attr(showbackground=false, showgrid=false, zeroline=false, showticklabels=false,title=""),
-                zaxis = attr(showbackground=false, showgrid=false, zeroline=false, showticklabels=false,title=""),
+                xaxis = attr(showbackground=true, showgrid=true, zeroline=false, showticklabels=false, title=""),
+                yaxis = attr(showbackground=true, showgrid=true, zeroline=false, showticklabels=false,title=""),
+                zaxis = attr(showbackground=true, showgrid=true, zeroline=false, showticklabels=false,title=""),
                 bgcolor = "rgba(0,0,0,0)"  # Transparent background
                 ),
                 showlegend=true
@@ -322,6 +323,8 @@ function simulations(α_start, α_finish, step,u0)
             xaxis_title = "Count",
             yaxis_title = "Minimum relative distance"
         )
+        
+        #println(compute_num_neighbors(u0,0.25))
         plot_steadystates(u0,α,λ)
         
         #display(plot(trace_min_rel,layout))
@@ -333,14 +336,14 @@ function simulations(α_start, α_finish, step,u0)
     trace_max = trace_measurement(α_start, α_finish,step,max_arr,"max")
     trace_min = trace_measurement(α_start, α_finish,step,min_arr,"min")
     trace_mean = trace_measurement(α_start, α_finish,step,mean_arr,"mean")
-    #trace_std = trace_measurement(α_start, α_finish,step,std_arr,"std")
+    trace_std = trace_measurement(α_start, α_finish,step,std_arr,"std")
     layout = Layout(
-            title = "Measurements of steady states distances over the variation of α",
+            title = "Measurements of steady states distances over the variation of α (N = $N)",
             xaxis_title = "Value of α",
             yaxis_title = "Distance",
             showlegend = true
             )
-    p = plot([trace_max,trace_min,trace_mean],layout)
+    p = plot([trace_max,trace_min,trace_mean,trace_std],layout)
     display(p)
 
     
@@ -368,6 +371,7 @@ end
 #save("minimum_initial_condition.jld2", "minimum_initial_condition", min_initial_condition)
 data = load("minimum_initial_condition.jld2")
 min_initial_condition = data["minimum_initial_condition"]
+#print(compute_num_neighbors(min_initial_condition,0.5))
 #println("finished")
 #println(min_initial_condition)
 #println(compute_energy())
@@ -377,7 +381,8 @@ min_initial_condition = data["minimum_initial_condition"]
 #arr = compute_all_minimum_relative_distance(u0)
 #plot(trace_measurement(1,2,2,arr,"relative_min"))
 
-simulations(25,30,5,min_initial_condition)
+#simulations(20,100,5,min_initial_condition)
+simulations(120,120,5,u0)
 #u = solver(30,0.1,u0)
 #plot_steadystates(u)
 
