@@ -12,7 +12,7 @@ using JLD2
 include("functions.jl")
 
 ### Parameters 
-N = 80
+N = 50
 
 ### Kernel Parameters
 λ = 0.01
@@ -46,24 +46,7 @@ Xa = zeros(type, N, N)
 Ya = zeros(type, N, N)
 p = (α, λ, N, r, f, a, XX, YY, ZZ, YX, ZX, ZY, Xa, Ya)
 
-### Solving
 
-
-#### How close are we to the steady state?
-#print(norm(g(u,p), Inf))
-
-### Plots
-
-#u = reshape(u,  N,3)
-#scatter(u[:,1], u[:,2], u[:,3], m=(3, 0.8, :blues, stroke(0)))
-
-
-# Define a range of alpha values to test
-#alpha_values = 30:5:100
-#lambda_values = [0.01]
-
-#function calculate_weight(u)
-   # return
 function compute_minimum_distance(point1, vec_point)
     min_distance = 10000
     for point2 in eachrow(vec_point)
@@ -97,7 +80,7 @@ function compute_all_distance(point1, vec_point)
     
 end
 
-#find the 3 closest points for every steady state
+#find the k closest points for every steady state
 function find_k_closest_point(points,k)
     matrix = zeros(Int,length(points[:,1]),k)
     
@@ -112,6 +95,7 @@ function find_k_closest_point(points,k)
     return matrix
 end
 
+#generate k random initial conditions
 function generate_randoms(N,k)
     list = zeros(3,N,k)
     for i in range(1,k)
@@ -122,13 +106,15 @@ function generate_randoms(N,k)
     return list
 end
 
+#solves the ODE system
 function solver(α,λ,u)
     p = (α, λ, N, r, f, a, XX, YY, ZZ, YX, ZX, ZY, Xa, Ya)
     u = solve(SteadyStateProblem(ff_hessian, u[:], p), DynamicSS(TRBDF2()))
     u = reshape(u,N,3)
-    println("norm when α = $α: $(norm(g(u,p), Inf))")
+    #println("norm when α = $α: $(norm(g(u,p), Inf))")
     return u
 end
+
 
 function plot_steadystates(u,α,λ)
     center_of_mass = [mean(u[:,1]), mean(u[:,2]), mean(u[:,3])]
@@ -170,14 +156,14 @@ function plot_steadystates(u,α,λ)
         ], 
         Layout(
             title=attr(
-             text=" Position of all steady states when α = $α, λ = $λ",   
+             text=" Position of All Steady States when α = $α, λ = $λ",   
              x=0.47,                    # Position title to the far right
              y=0.92,                    # Position title near the top
              #xanchor="middle",           # Right align the title
              #yanchor="top"              # Top align the title
             ),
             legend=attr(
-                x=0.95,           # 0 = left, 1 = right
+                x=0.67,           # 0 = left, 1 = right
                 y=0.5,           # 0 = bottom, 1 = top
             
             ),
@@ -188,12 +174,13 @@ function plot_steadystates(u,α,λ)
 
             margin=attr(l=0, r=0, b=50, t=0),
             scene = attr(
-                xaxis = attr(showbackground=true, showgrid=true, zeroline=false, showticklabels=false, title=""),
-                yaxis = attr(showbackground=true, showgrid=true, zeroline=false, showticklabels=false,title=""),
-                zaxis = attr(showbackground=true, showgrid=true, zeroline=false, showticklabels=false,title=""),
+                xaxis = attr(showbackground=false, showgrid=true, zeroline=false, showticklabels=false, title=""),
+                yaxis = attr(showbackground=false, showgrid=true, zeroline=false, showticklabels=false,title=""),
+                zaxis = attr(showbackground=false, showgrid=true, zeroline=false, showticklabels=false,title=""),
                 bgcolor = "rgba(0,0,0,0)"  # Transparent background
                 ),
-                showlegend=true
+                showlegend=true,
+                
         ))
             
         
@@ -204,14 +191,14 @@ function sorted_eigenvalues(h,u,p)
     return sort((eigen(h(u,p)).values))
 end
 
-
+#add the steady states distances to an array
 function add_distance(arr,u,type)
     center_of_mass = [mean(u[:,1]), mean(u[:,2]), mean(u[:,3])]
-    if type == "max"
+    if type == "Max"
         max_dist = compute_maximum_distance(center_of_mass,u)
         push!(arr,max_dist)
     
-    elseif type == "min"
+    elseif type == "Min"
         min_dist = compute_minimum_distance(center_of_mass,u)
         push!(arr,min_dist)
     
@@ -220,10 +207,10 @@ function add_distance(arr,u,type)
         min_dist = compute_minimum_distance(center_of_mass,u)
         push!(arr,max_dist - min_dist)
 
-    elseif type == "mean"
+    elseif type == "Mean"
         Mean = mean(compute_all_distance(center_of_mass,u))
         push!(arr,Mean)
-    elseif type == "std"
+    elseif type == "Std"
         Std = std(compute_all_distance(center_of_mass,u))
         push!(arr,Std)
 
@@ -233,6 +220,7 @@ function add_distance(arr,u,type)
 
 end
 
+#creates the trace for plotting the different distances
 function trace_measurement(α_start, α_finish, step, arr,name)
     
 
@@ -241,7 +229,7 @@ function trace_measurement(α_start, α_finish, step, arr,name)
 
     trace = scatter(x=x_values, y= y_values,
                     mode="lines+markers",
-                    name="$name distance")
+                    name="$name Distance")
     return trace
 end
 
@@ -263,6 +251,7 @@ function trace_minimum_relative_distance(α,arr)
     return hist
 end
 
+
 function neighbors(point, u, r)
     count = 0
     for p in eachrow(u)
@@ -274,6 +263,7 @@ function neighbors(point, u, r)
     return count
 end
 
+#compute how many other points are in a neighborhood of radius r
 function compute_num_neighbors(u,r)
     list = []
     for point in eachrow(u)
@@ -301,6 +291,8 @@ function compute_energy(k)
 
 end
 
+
+#main loop for the simulations
 function simulations(α_start, α_finish, step,u0)
     
     num_steps = Int(div(α_finish - α_start, step) + 2 ) # Add 1 to include the last step
@@ -309,36 +301,51 @@ function simulations(α_start, α_finish, step,u0)
     mean_arr = []
     std_arr = []
 
+
+    min_arr2 = []
+    max_arr2 = []
+    mean_arr2 = []
+    std_arr2 = []
+    
+
     #main loop for running simulations
     for α in α_start : step : α_finish
         u = solver(α,λ,u0[:])
-        min_arr = add_distance(min_arr,u,"min")
-        max_arr = add_distance(max_arr,u,"max")
-        mean_arr = add_distance(mean_arr,u,"mean")
-        std_arr = add_distance(std_arr,u,"std")
+        min_arr = add_distance(min_arr,u,"Min")
+        max_arr = add_distance(max_arr,u,"Max")
+        mean_arr = add_distance(mean_arr,u,"Mean")
+        std_arr = add_distance(std_arr,u,"Std")
+
+       
         u0 = u
-        trace_min_rel = trace_minimum_relative_distance(α,compute_all_minimum_relative_distance(u0))
-        layout = Layout(
-            title = "Distribution of minimum relative distances for all steady states at α = $α",
-            xaxis_title = "Count",
-            yaxis_title = "Minimum relative distance"
-        )
+
+
+            widths = compute_widths(500,u0)
+            push!(min_arr2,minimum(widths))
+            push!(max_arr2,maximum(widths))
+            push!(mean_arr2,mean(widths))
+            push!(std_arr2,std(widths))
+
+            
+        if α == 30 || α == 70 || α == 200 || α == 300 || α == 500 || α == 1000 || α == 2000
+
+        #plot_steadystates(u0,α,λ)
+            plot_histogram_width(u0,α)
+        end
         
-        #println(compute_num_neighbors(u0,0.25))
-        plot_steadystates(u0,α,λ)
-        
-        #display(plot(trace_min_rel,layout))
     end
+    
+
 
     
     
 
-    trace_max = trace_measurement(α_start, α_finish,step,max_arr,"max")
-    trace_min = trace_measurement(α_start, α_finish,step,min_arr,"min")
-    trace_mean = trace_measurement(α_start, α_finish,step,mean_arr,"mean")
-    trace_std = trace_measurement(α_start, α_finish,step,std_arr,"std")
+    trace_max = trace_measurement(α_start, α_finish,step,max_arr,"Max")
+    trace_min = trace_measurement(α_start, α_finish,step,min_arr,"Min")
+    trace_mean = trace_measurement(α_start, α_finish,step,mean_arr,"Mean")
+    trace_std = trace_measurement(α_start, α_finish,step,std_arr,"Std")
     layout = Layout(
-            title = "Measurements of steady states distances over the variation of α (N = $N)",
+            title = "Measurements of Steady States Distances over the Variation of α (N = $N)",
             xaxis_title = "Value of α",
             yaxis_title = "Distance",
             showlegend = true
@@ -346,13 +353,70 @@ function simulations(α_start, α_finish, step,u0)
     p = plot([trace_max,trace_min,trace_mean,trace_std],layout)
     display(p)
 
+    trace_max2 = trace_measurement(α_start, α_finish,step,max_arr2,"Max")
+    trace_min2 = trace_measurement(α_start, α_finish,step,min_arr2,"Min")
+    trace_mean2 = trace_measurement(α_start, α_finish,step,mean_arr2,"Mean")
+    trace_std2 = trace_measurement(α_start, α_finish,step,std_arr2,"Std")
+
+    layout2 = Layout(
+            title = "Measurements of Widths Distances over the Variation of α (N = $N)",
+            xaxis_title = "Value of α",
+            yaxis_title = "Distance",
+            showlegend = true
+            )
+    p2 = plot([trace_max2,trace_min2,trace_mean2,trace_std2],layout2)
+    display(p2)
+
+end
+
+function compute_width(d,points)
+    projections = []
+    for point in eachrow(points)
+        push!(projections,dot(point,d))
+    end
+    return maximum(projections) - minimum(projections)
+end
+
+function compute_widths(num_samples, points)
+    widths = []
+    for i in 1:num_samples
+        d = rand(1,3)
+        d /= norm(d)
+        push!(widths,compute_width(d,points)) 
+    end
+    return widths
+end
+
+function plot_histogram_width(u0,α)
+    widths = compute_widths(500,u0)
+            println("std of width for α = $α:", std(widths))
+            println("mean of width for α = $α:", mean(widths))
+            println("median of width for α = $α:", median(widths))
     
-    
-    
-    
-    
+            layout = Layout(
+                title = "Distribution of Widths for a Random Sample of 500 Unit Directions (α = $α)",
+                 xaxis_title = "Width",
+                 yaxis_title = "Count",
+                bargap = 0.05,
+            )
+
+            trace_hist = histogram(x = widths,  marker = attr(
+                        color = "skyblue",  # fill color
+                        line = attr(
+                        color = "black", # outline color
+                        width = 1        # outline thickness
+                            )
+                         )
+                    )
+    display(plot(trace_hist,layout))
     
 end
+
+#u0 = rand(N,3)
+#d = [0,0,1]
+#println(compute_width(d,u0))
+
+
 
 
 
@@ -375,14 +439,14 @@ min_initial_condition = data["minimum_initial_condition"]
 #println("finished")
 #println(min_initial_condition)
 #println(compute_energy())
-#u0 = vec(2 * rand(3, N) .- 1)
+u0 = vec(2 * rand(3, N) .- 1)
 #point = u0[1,:]
 #neighbors(point,u0,0.025)
 #arr = compute_all_minimum_relative_distance(u0)
 #plot(trace_measurement(1,2,2,arr,"relative_min"))
 
-#simulations(20,100,5,min_initial_condition)
-simulations(120,120,5,u0)
+#simulations(20,20,5,min_initial_condition)
+simulations(20,70,5,u0)
 #u = solver(30,0.1,u0)
 #plot_steadystates(u)
 
